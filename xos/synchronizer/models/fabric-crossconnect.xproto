@@ -1,0 +1,13 @@
+option name = "fabric-crossconnect";
+option app_label = "fabric-crossconnect";
+
+message FabricCrossconnectService (Service){
+    option verbose_name = "Fabric Crossconnect Service";
+    option description="Fabric Crossconnect implementation";
+}
+
+
+message FabricCrossconnectServiceInstance (ServiceInstance){
+    option verbose_name = "Fabric Crossconnect Service Instance";
+    option owner_class_name="FabricCrossconnectService";
+}

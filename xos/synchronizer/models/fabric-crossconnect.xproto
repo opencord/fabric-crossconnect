@@ -6,8 +6,12 @@ message FabricCrossconnectService (Service){
     option description="Fabric Crossconnect implementation";
 }
 
-
 message FabricCrossconnectServiceInstance (ServiceInstance){
     option verbose_name = "Fabric Crossconnect Service Instance";
     option owner_class_name="FabricCrossconnectService";
+}
+
+message BNGPortMapping (XOSBase) {
+    required int32 s_tag = 1 [help_text = "S Tag", null = False, db_index = False, blank = False, unique=True, tosca_key=True];
+    required int32 switch_port = 2 [help_text = "Port Number", null = False, db_index = False, blank = False];
 }

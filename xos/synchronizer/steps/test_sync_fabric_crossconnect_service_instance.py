@@ -81,7 +81,6 @@ class TestSyncOLTDevice(unittest.TestCase):
         for (k, v) in model_accessor.all_model_classes.items():
             globals()[k] = v
 
-
         self.sync_step = SyncFabricCrossconnectServiceInstance
         self.sync_step.log = Mock()
 

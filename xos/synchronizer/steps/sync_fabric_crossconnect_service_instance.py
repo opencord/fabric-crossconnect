@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from synchronizers.new_base.syncstep import SyncStep, DeferredException
-from synchronizers.new_base.modelaccessor import model_accessor, FabricCrossconnectServiceInstance, ServiceInstance
+from synchronizers.new_base.modelaccessor import model_accessor, FabricCrossconnectServiceInstance, ServiceInstance, BNGPortMapping
 
 from xosconfig import Config
 from multistructlog import create_logger
@@ -56,8 +56,14 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
         }
 
     def get_bng_port(self, o):
-        # TODO(smbaker): Get BNG port from somewhere
-        return 2
+        si = ServiceInstance.objects.get(id=o.id)
+        s_tag = si.get_westbound_service_instance_properties("s_tag")
+
+        bng_ports = BNGPortMapping.objects.filter(s_tag = s_tag)
+        if not bng_ports:
+            raise Exception("Unable to determine BNG port for s_tag %s" % s_tag)
+
+        return bng_ports[0]
 
     def sync_record(self, o):
         self.log.info("Sync'ing Fabric Crossconnect Service Instance", service_instance=o)
@@ -86,6 +92,16 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
 
         self.log.info("ONOS response", res=r.text)
 
+    def get_all_subscribers_on_s_tag(self, s_tag):
+        # TODO(smbaker): inefficient
+        results = []
+        for fsi in FabricCrossconnectServiceInstance.objects.all():
+            si = ServiceInstance.objects.get(id=fsi.id)
+            si_s_tag = si.get_westbound_service_instance_properties("s_tag")
+            if (si_s_tag == s_tag):
+                results.append(fsi)
+        return results
+
     def delete_record(self, o):
         self.log.info("Deleting Fabric Crossconnect Service Instance", service_instance=o)
 
@@ -95,6 +111,8 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
             onos = self.get_fabric_onos_info(o)
 
             si = ServiceInstance.objects.get(id=o.id)
+
+            other_subscribers = self.get_all_subscribers_on_s_tag(s_tag)
 
             # TODO(smbaker): unable to get westbound service_instance while deleting?
 

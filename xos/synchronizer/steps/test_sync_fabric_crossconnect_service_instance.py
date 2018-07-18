@@ -15,7 +15,7 @@
 import unittest
 
 import functools
-from mock import patch, call, Mock, PropertyMock
+from mock import patch, call, Mock, PropertyMock, MagicMock
 import requests_mock
 import multistructlog
 from multistructlog import create_logger
@@ -44,10 +44,8 @@ def get_models_fn(service_name, xproto_name):
     raise Exception("Unable to find service=%s xproto=%s" % (service_name, xproto_name))
 # END generate model from xproto
 
-def mock_get_westbound_service_instance_properties(prop):
-    if prop == "status":
-        return "enabled"
-    return prop
+def mock_get_westbound_service_instance_properties(props, prop):
+    return props[prop]
 
 def match_json(desired, req):
     if desired!=req.json():
@@ -55,7 +53,7 @@ def match_json(desired, req):
         return False
     return True
 
-class TestSyncOLTDevice(unittest.TestCase):
+class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
 
     def setUp(self):
         global DeferredException
@@ -81,14 +79,139 @@ class TestSyncOLTDevice(unittest.TestCase):
         for (k, v) in model_accessor.all_model_classes.items():
             globals()[k] = v
 
-
         self.sync_step = SyncFabricCrossconnectServiceInstance
         self.sync_step.log = Mock()
 
-        # TODO: stuff
+        # mock onos-fabric
+        self.onos_fabric = Service(name = "onos-fabric",
+                              rest_hostname = "onos-fabric",
+                              rest_port = "8181",
+                              rest_username = "onos",
+                              rest_password = "rocks")
 
-    def test_sync(self):
-        pass
+        self.service = FabricCrossconnectService(name = "fcservice",
+                                                 provider_services = [self.onos_fabric])
+
+    def mock_westbound(self, fsi, s_tag, switch_datapath_id, switch_port):
+        # Mock out a ServiceInstance so the syncstep can call get_westbound_service_instance_properties on it
+        si = ServiceInstance(id=fsi.id)
+        si.get_westbound_service_instance_properties = functools.partial(
+            mock_get_westbound_service_instance_properties,
+            {"s_tag": s_tag,
+             "switch_datapath_id": switch_datapath_id,
+             "switch_port": switch_port})
+        return si
+
+    def test_format_url(self):
+        url = self.sync_step().format_url("foo.com/bar")
+        self.assertEqual(url, "http://foo.com/bar")
+
+        url = self.sync_step().format_url("http://foo.com/bar")
+        self.assertEqual(url, "http://foo.com/bar")
+
+    def test_make_handle_extract_handle(self):
+        h = self.sync_step().make_handle(222, "of:0000000000000201")
+        (s_tag, dpid) = self.sync_step().extract_handle(h)
+
+        self.assertEqual(s_tag, 222)
+        self.assertEqual(dpid, "of:0000000000000201")
+
+    def test_get_fabric_onos_init(self):
+        fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service)
+
+        d = self.sync_step().get_fabric_onos_info(fsi)
+
+        self.assertEqual(d["url"], "http://onos-fabric:8181")
+        self.assertEqual(d["user"], "onos")
+        self.assertEqual(d["pass"], "rocks")
+
+
+    @requests_mock.Mocker()
+    def test_sync(self, m):
+        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects, \
+            patch.object(BNGPortMapping.objects, "get_items") as bng_objects, \
+            patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
+
+            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service)
+
+            si = self.mock_westbound(fsi, s_tag=111, switch_datapath_id = "of:0000000000000201", switch_port = 3)
+            serviceinstance_objects.return_value = [si]
+
+            bngmapping = BNGPortMapping(s_tag=111, switch_port=4)
+            bng_objects.return_value = [bngmapping]
+
+            desired_data = {"deviceId": "of:0000000000000201",
+                    "vlanId": 111,
+                    "ports": [3, 4]}
+
+            m.post("http://onos-fabric:8181/onos/segmentrouting/xconnect",
+                   status_code=200,
+                   additional_matcher=functools.partial(match_json, desired_data))
+
+            self.sync_step().sync_record(fsi)
+            self.assertTrue(m.called)
+
+            self.assertEqual(fsi.backend_handle, "111/of:0000000000000201")
+            fcsi_save.assert_called()
+
+    def test_sync_no_bng_mapping(self):
+        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects, \
+            patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
+
+            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service)
+
+            si = self.mock_westbound(fsi, s_tag=111, switch_datapath_id = "of:0000000000000201", switch_port = 3)
+            serviceinstance_objects.return_value = [si]
+
+            with self.assertRaises(Exception) as e:
+                self.sync_step().sync_record(fsi)
+
+            self.assertEqual(e.exception.message, "Unable to determine BNG port for s_tag 111")
+
+    @requests_mock.Mocker()
+    def test_delete(self, m):
+        with patch.object(FabricCrossconnectServiceInstance.objects, "get_items") as fcsi_objects, \
+                patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
+            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service,
+                                                    backend_handle="111/of:0000000000000201",
+                                                    enacted=True)
+
+            fcsi_objects.return_value=[fsi]
+
+            desired_data = {"deviceId": "of:0000000000000201",
+                            "vlanId": 111}
+
+            m.delete("http://onos-fabric:8181/onos/segmentrouting/xconnect",
+                   status_code=204,
+                   additional_matcher=functools.partial(match_json, desired_data))
+
+            self.sync_step().delete_record(fsi)
+            self.assertTrue(m.called)
+
+    @requests_mock.Mocker()
+    def test_delete_in_use(self, m):
+        with patch.object(FabricCrossconnectServiceInstance.objects, "get_items") as fcsi_objects:
+            # The subscriber we want to delete
+            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service,
+                                                    backend_handle="111/of:0000000000000201",
+                                                    enacted=True)
+
+            # Another subscriber using the same (s_tag, dpid) pair
+            fsi2 = FabricCrossconnectServiceInstance(id=7778, owner=self.service,
+                                                     backend_handle="111/of:0000000000000201",
+                                                     enacted=True)
+
+            fcsi_objects.return_value=[fsi, fsi2]
+
+            desired_data = {"deviceId": "of:0000000000000201",
+                            "vlanId": 111}
+
+            m.delete("http://onos-fabric:8181/onos/segmentrouting/xconnect",
+                   status_code=204,
+                   additional_matcher=functools.partial(match_json, desired_data))
+
+            self.sync_step().delete_record(fsi)
+            self.assertFalse(m.called)
 
     def tearDown(self):
         self.o = None

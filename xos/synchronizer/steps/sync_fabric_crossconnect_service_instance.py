@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from synchronizers.new_base.syncstep import SyncStep, DeferredException
-from synchronizers.new_base.modelaccessor import model_accessor, FabricCrossconnectServiceInstance, ServiceInstance
+from synchronizers.new_base.modelaccessor import model_accessor, FabricCrossconnectServiceInstance, ServiceInstance, BNGPortMapping
 
 from xosconfig import Config
 from multistructlog import create_logger
@@ -55,9 +55,16 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
             'pass': fabric_onos.rest_password
         }
 
-    def get_bng_port(self, o):
-        # TODO(smbaker): Get BNG port from somewhere
-        return 2
+    def make_handle(self, s_tag, west_dpid):
+        # Generate a backend_handle that uniquely identifies the cross connect. ONOS doesn't provide us a handle, so
+        # we make up our own. This helps us to detect other FabricCrossconnectServiceInstance using the same
+        # entry, as well as to be able to extract the necessary information to delete the entry later.
+        return "%d/%s" % (s_tag, west_dpid)
+
+    def extract_handle(self, backend_handle):
+        (s_tag, dpid) = backend_handle.split("/",1)
+        s_tag = int(s_tag)
+        return (s_tag, dpid)
 
     def sync_record(self, o):
         self.log.info("Sync'ing Fabric Crossconnect Service Instance", service_instance=o)
@@ -67,15 +74,19 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
         si = ServiceInstance.objects.get(id=o.id)
 
         s_tag = si.get_westbound_service_instance_properties("s_tag")
-        west_dpid = si.get_westbound_service_instance_properties("switch_datapath_id")
+        dpid = si.get_westbound_service_instance_properties("switch_datapath_id")
         west_port = si.get_westbound_service_instance_properties("switch_port")
-        east_port = self.get_bng_port(o)
 
-        data = { "deviceId": west_dpid,
+        bng_mappings = BNGPortMapping.objects.filter(s_tag = s_tag)
+        if not bng_mappings:
+            raise Exception("Unable to determine BNG port for s_tag %s" % s_tag)
+        east_port = bng_mappings[0].switch_port
+
+        data = { "deviceId": dpid,
                  "vlanId": s_tag,
                  "ports": [ west_port, east_port ] }
 
-        url = onos['url'] + '/onos/segmentsrouting/xconnect'
+        url = onos['url'] + '/onos/segmentrouting/xconnect'
 
         self.log.info("Sending request to ONOS", url=url, body=data)
 
@@ -84,25 +95,29 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
         if r.status_code != 200:
             raise Exception("Failed to create fabric crossconnect in ONOS: %s" % r.text)
 
+        o.backend_handle = self.make_handle(s_tag, dpid)
+        o.save(update_fields=["backend_handle"])
+
         self.log.info("ONOS response", res=r.text)
 
     def delete_record(self, o):
         self.log.info("Deleting Fabric Crossconnect Service Instance", service_instance=o)
 
-        # TODO(smbaker): make sure it's not in use by some other subscriber
-
-        if o.enacted:
+        if o.backend_handle:
             onos = self.get_fabric_onos_info(o)
 
-            si = ServiceInstance.objects.get(id=o.id)
+            # If some other subscriber is using the same entry, then we shouldn't delete it
+            other_subscribers = FabricCrossconnectServiceInstance.objects.filter(backend_handle=o.backend_handle)
+            other_subscribers = [x for x in other_subscribers if x.id != o.id]
+            if other_subscribers:
+                self.log.info("Other subscribers exist using same fabric crossconnect entry. Not deleting.")
+                return
 
-            # TODO(smbaker): unable to get westbound service_instance while deleting?
+            # backend_handle has everything we need in it to delete this entry.
+            (s_tag, dpid) = self.extract_handle(o.backend_handle)
 
-            s_tag = si.get_westbound_service_instance_properties("s_tag")
-            west_dpid = si.get_westbound_service_instance_properties("switch_datapath_id")
-
-            data = { "deviceId": west_dpid,
-                     "vlanID": s_tag }
+            data = { "deviceId": dpid,
+                     "vlanId": s_tag }
 
             url = onos['url'] + '/onos/segmentrouting/xconnect'
 

@@ -125,6 +125,54 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
         self.assertEqual(d["user"], "onos")
         self.assertEqual(d["pass"], "rocks")
 
+    def test_range_matches_single(self):
+        self.assertTrue(self.sync_step().range_matches(123, "123"))
+
+    def test_range_matches_single_incorrect(self):
+        self.assertFalse(self.sync_step().range_matches(123, "456"))
+
+    def test_range_matches_range(self):
+        self.assertTrue(self.sync_step().range_matches(123, "122-124"))
+
+    def test_range_matches_range_incorrect(self):
+        self.assertFalse(self.sync_step().range_matches(123, "110-113"))
+
+    def test_range_matches_any(self):
+        self.assertTrue(self.sync_step().range_matches(123, "ANY"))
+        self.assertTrue(self.sync_step().range_matches(123, "any"))
+
+    def test_find_bng_single(self):
+        with patch.object(BNGPortMapping.objects, "get_items") as bng_objects, \
+                patch.object(self.sync_step, "range_matches") as range_matches:
+            bngmapping = BNGPortMapping(s_tag="111", switch_port=4)
+            bng_objects.return_value = [bngmapping]
+
+            # this should not be called
+            range_matches.return_value = False
+
+            found_bng = self.sync_step().find_bng(111)
+            self.assertTrue(found_bng)
+            self.assertEqual(found_bng.switch_port, 4)
+
+            range_matches.assert_not_called()
+
+    def test_find_bng_any(self):
+        with patch.object(BNGPortMapping.objects, "get_items") as bng_objects:
+            bngmapping = BNGPortMapping(s_tag="ANY", switch_port=4)
+            bng_objects.return_value = [bngmapping]
+
+            found_bng = self.sync_step().find_bng(111)
+            self.assertTrue(found_bng)
+            self.assertEqual(found_bng.switch_port, 4)
+
+    def test_find_bng_range(self):
+        with patch.object(BNGPortMapping.objects, "get_items") as bng_objects:
+            bngmapping = BNGPortMapping(s_tag="100-200", switch_port=4)
+            bng_objects.return_value = [bngmapping]
+
+            found_bng = self.sync_step().find_bng(111)
+            self.assertTrue(found_bng)
+            self.assertEqual(found_bng.switch_port, 4)
 
     @requests_mock.Mocker()
     def test_sync(self, m):
@@ -137,7 +185,7 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
             si = self.mock_westbound(fsi, s_tag=111, switch_datapath_id = "of:0000000000000201", switch_port = 3)
             serviceinstance_objects.return_value = [si]
 
-            bngmapping = BNGPortMapping(s_tag=111, switch_port=4)
+            bngmapping = BNGPortMapping(s_tag="111", switch_port=4)
             bng_objects.return_value = [bngmapping]
 
             desired_data = {"deviceId": "of:0000000000000201",
@@ -160,7 +208,7 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
 
             fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service)
 
-            si = self.mock_westbound(fsi, s_tag=111, switch_datapath_id = "of:0000000000000201", switch_port = 3)
+            si = self.mock_westbound(fsi, s_tag="111", switch_datapath_id = "of:0000000000000201", switch_port = 3)
             serviceinstance_objects.return_value = [si]
 
             with self.assertRaises(Exception) as e:

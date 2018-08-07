@@ -23,5 +23,5 @@ topology_template:
     bngmapping:
       type: tosca.nodes.BNGPortMapping
       properties:
-        s_tag: 222
+        s_tag: "220-225"
         switch_port: 4

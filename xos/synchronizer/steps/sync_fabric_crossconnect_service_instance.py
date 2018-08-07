@@ -66,6 +66,39 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
         s_tag = int(s_tag)
         return (s_tag, dpid)
 
+    def range_matches(self, value, pattern):
+        value=int(value)
+        for this_range in pattern.split(","):
+            this_range = this_range.strip()
+            if "-" in this_range:
+                (first, last) = this_range.split("-")
+                first = int(first.strip())
+                last = int(last.strip())
+                if (value>=first) and (value<=last):
+                    return True
+            elif this_range.lower()=="any":
+                return True
+            else:
+                if (value==int(this_range)):
+                    return True
+        return False
+
+    def find_bng(self, s_tag):
+        # See if there's a mapping for our s-tag directly
+        bng_mappings = BNGPortMapping.objects.filter(s_tag=str(s_tag))
+        if bng_mappings:
+            return bng_mappings[0]
+
+        # TODO(smbaker): Examine miss performance, and if necessary set a flag in the save method to allow filtering
+        # of mappings based on whether they are ranges or any.
+
+        # See if there are any ranges or "any" that match
+        for bng_mapping in BNGPortMapping.objects.all():
+            if self.range_matches(s_tag, bng_mapping.s_tag):
+                 return bng_mapping
+
+        return None
+
     def sync_record(self, o):
         self.log.info("Sync'ing Fabric Crossconnect Service Instance", service_instance=o)
 
@@ -77,10 +110,10 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
         dpid = si.get_westbound_service_instance_properties("switch_datapath_id")
         west_port = si.get_westbound_service_instance_properties("switch_port")
 
-        bng_mappings = BNGPortMapping.objects.filter(s_tag = s_tag)
-        if not bng_mappings:
+        bng_mapping = self.find_bng(s_tag = s_tag)
+        if not bng_mapping:
             raise Exception("Unable to determine BNG port for s_tag %s" % s_tag)
-        east_port = bng_mappings[0].switch_port
+        east_port = bng_mapping.switch_port
 
         data = { "deviceId": dpid,
                  "vlanId": s_tag,

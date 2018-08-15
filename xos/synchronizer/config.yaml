@@ -23,6 +23,7 @@ steps_dir: "/opt/xos/synchronizers/fabric-crossconnect/steps"
 model_policies_dir: "/opt/xos/synchronizers/fabric-crossconnect/model_policies"
 sys_dir: "/opt/xos/synchronizers/fabric-crossconnect/sys"
 models_dir: "/opt/xos/synchronizers/fabric-crossconnect/models"
+event_steps_dir: "/opt/xos/synchronizers/fabric-crossconnect/event_steps"
 logging:
   version: 1
   handlers:

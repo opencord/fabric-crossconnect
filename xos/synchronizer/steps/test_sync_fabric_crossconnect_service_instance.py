@@ -111,10 +111,10 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
 
     def test_make_handle_extract_handle(self):
         h = self.sync_step().make_handle(222, "of:0000000000000201")
-        (s_tag, dpid) = self.sync_step().extract_handle(h)
+        (s_tag, switch_datapath_id) = self.sync_step().extract_handle(h)
 
         self.assertEqual(s_tag, 222)
-        self.assertEqual(dpid, "of:0000000000000201")
+        self.assertEqual(switch_datapath_id, "of:0000000000000201")
 
     def test_get_fabric_onos_init(self):
         fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service)
@@ -180,10 +180,10 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
             patch.object(BNGPortMapping.objects, "get_items") as bng_objects, \
             patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
 
-            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service)
+            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service, s_tag=111, source_port=3,
+                                                    switch_datapath_id="of:0000000000000201", updated=1, policed=2)
 
-            si = self.mock_westbound(fsi, s_tag=111, switch_datapath_id = "of:0000000000000201", switch_port = 3)
-            serviceinstance_objects.return_value = [si]
+            serviceinstance_objects.return_value = [fsi]
 
             bngmapping = BNGPortMapping(s_tag="111", switch_port=4)
             bng_objects.return_value = [bngmapping]
@@ -206,15 +206,71 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
         with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects, \
             patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
 
-            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service)
+            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service, s_tag=111, source_port=3,
+                                                    switch_datapath_id="of:0000000000000201", updated=1, policed=2)
 
-            si = self.mock_westbound(fsi, s_tag="111", switch_datapath_id = "of:0000000000000201", switch_port = 3)
-            serviceinstance_objects.return_value = [si]
+            serviceinstance_objects.return_value = [fsi]
 
             with self.assertRaises(Exception) as e:
                 self.sync_step().sync_record(fsi)
 
             self.assertEqual(e.exception.message, "Unable to determine BNG port for s_tag 111")
+
+    def test_sync_not_policed(self):
+        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects, \
+            patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
+
+            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service, source_port=3,
+                                                    switch_datapath_id="of:0000000000000201", updated=1, policed=0)
+
+            serviceinstance_objects.return_value = [fsi]
+
+            with self.assertRaises(Exception) as e:
+                self.sync_step().sync_record(fsi)
+
+            self.assertEqual(e.exception.message, "Waiting for model_policy to run on fcsi 7777")
+
+    def test_sync_no_s_tag(self):
+        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects, \
+            patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
+
+            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service, source_port=3,
+                                                    switch_datapath_id="of:0000000000000201", updated=1, policed=2)
+
+            serviceinstance_objects.return_value = [fsi]
+
+            with self.assertRaises(Exception) as e:
+                self.sync_step().sync_record(fsi)
+
+            self.assertEqual(e.exception.message, "Cannot sync FabricCrossconnectServiceInstance if s_tag is None on fcsi 7777")
+
+    def test_sync_no_switch_datapath_id(self):
+        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects, \
+            patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
+
+            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service, source_port=3, s_tag=111,
+                                                    updated=1, policed=2)
+
+            serviceinstance_objects.return_value = [fsi]
+
+            with self.assertRaises(Exception) as e:
+                self.sync_step().sync_record(fsi)
+
+            self.assertEqual(e.exception.message, "Cannot sync FabricCrossconnectServiceInstance if switch_datapath_id is unset on fcsi 7777")
+
+    def test_sync_no_source_port(self):
+        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects, \
+            patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
+
+            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service, s_tag=111,
+                                                    switch_datapath_id="of:0000000000000201", updated=1, policed=2)
+
+            serviceinstance_objects.return_value = [fsi]
+
+            with self.assertRaises(Exception) as e:
+                self.sync_step().sync_record(fsi)
+
+            self.assertEqual(e.exception.message, "Cannot sync FabricCrossconnectServiceInstance if source_port is None on fcsi 7777")
 
     @requests_mock.Mocker()
     def test_delete(self, m):
@@ -244,7 +300,7 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
                                                     backend_handle="111/of:0000000000000201",
                                                     enacted=True)
 
-            # Another subscriber using the same (s_tag, dpid) pair
+            # Another subscriber using the same (s_tag, switch_datapath_id) pair
             fsi2 = FabricCrossconnectServiceInstance(id=7778, owner=self.service,
                                                      backend_handle="111/of:0000000000000201",
                                                      enacted=True)

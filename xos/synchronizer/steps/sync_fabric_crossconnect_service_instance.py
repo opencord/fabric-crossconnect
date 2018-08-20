@@ -55,16 +55,16 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
             'pass': fabric_onos.rest_password
         }
 
-    def make_handle(self, s_tag, west_dpid):
+    def make_handle(self, s_tag, switch_datapath_id):
         # Generate a backend_handle that uniquely identifies the cross connect. ONOS doesn't provide us a handle, so
         # we make up our own. This helps us to detect other FabricCrossconnectServiceInstance using the same
         # entry, as well as to be able to extract the necessary information to delete the entry later.
-        return "%d/%s" % (s_tag, west_dpid)
+        return "%d/%s" % (s_tag, switch_datapath_id)
 
     def extract_handle(self, backend_handle):
-        (s_tag, dpid) = backend_handle.split("/",1)
+        (s_tag, switch_datapath_id) = backend_handle.split("/",1)
         s_tag = int(s_tag)
-        return (s_tag, dpid)
+        return (s_tag, switch_datapath_id)
 
     def range_matches(self, value, pattern):
         value=int(value)
@@ -102,22 +102,30 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
     def sync_record(self, o):
         self.log.info("Sync'ing Fabric Crossconnect Service Instance", service_instance=o)
 
+        if (o.policed is None) or (o.policed < o.updated):
+            raise DeferredException("Waiting for model_policy to run on fcsi %s" % o.id)
+
         onos = self.get_fabric_onos_info(o)
 
         si = ServiceInstance.objects.get(id=o.id)
 
-        s_tag = si.get_westbound_service_instance_properties("s_tag")
-        dpid = si.get_westbound_service_instance_properties("switch_datapath_id")
-        west_port = si.get_westbound_service_instance_properties("switch_port")
+        if (o.s_tag is None):
+            raise Exception("Cannot sync FabricCrossconnectServiceInstance if s_tag is None on fcsi %s" % o.id)
 
-        bng_mapping = self.find_bng(s_tag = s_tag)
+        if (o.source_port is None):
+            raise Exception("Cannot sync FabricCrossconnectServiceInstance if source_port is None on fcsi %s" % o.id)
+
+        if (not o.switch_datapath_id):
+            raise Exception("Cannot sync FabricCrossconnectServiceInstance if switch_datapath_id is unset on fcsi %s" % o.id)
+
+        bng_mapping = self.find_bng(s_tag = o.s_tag)
         if not bng_mapping:
-            raise Exception("Unable to determine BNG port for s_tag %s" % s_tag)
+            raise Exception("Unable to determine BNG port for s_tag %s" % o.s_tag)
         east_port = bng_mapping.switch_port
 
-        data = { "deviceId": dpid,
-                 "vlanId": s_tag,
-                 "ports": [ int(west_port), int(east_port) ] } 
+        data = { "deviceId": o.switch_datapath_id,
+                 "vlanId": o.s_tag,
+                 "ports": [ int(o.source_port), int(east_port) ] }
 
         url = onos['url'] + '/onos/segmentrouting/xconnect'
 
@@ -128,7 +136,12 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
         if r.status_code != 200:
             raise Exception("Failed to create fabric crossconnect in ONOS: %s" % r.text)
 
-        o.backend_handle = self.make_handle(s_tag, dpid)
+        # TODO(smbaker): If the o.backend_handle changed, then someone must have changed the
+        #   FabricCrossconnectServiceInstance. If so, then we potentially need to clean up the old
+        #   entry in ONOS. Furthermore, we might want to also save the two port numbers that we used,
+        #   to detect someone changing those.
+
+        o.backend_handle = self.make_handle(o.s_tag, o.switch_datapath_id)
         o.save(update_fields=["backend_handle"])
 
         self.log.info("ONOS response", res=r.text)
@@ -147,9 +160,9 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
                 return
 
             # backend_handle has everything we need in it to delete this entry.
-            (s_tag, dpid) = self.extract_handle(o.backend_handle)
+            (s_tag, switch_datapath_id) = self.extract_handle(o.backend_handle)
 
-            data = { "deviceId": dpid,
+            data = { "deviceId": switch_datapath_id,
                      "vlanId": s_tag }
 
             url = onos['url'] + '/onos/segmentrouting/xconnect'

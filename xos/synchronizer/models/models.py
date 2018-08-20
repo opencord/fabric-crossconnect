@@ -48,5 +48,6 @@ class BNGPortMapping(BNGPortMapping_decl):
 
     def save(self, *args, **kwargs):
         self.validate_range(self.s_tag)
+
         super(BNGPortMapping, self).save(*args, **kwargs)
 

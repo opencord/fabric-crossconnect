@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-from synchronizers.new_base.modelaccessor import FabricCrossconnectServiceInstance, model_accessor
+from synchronizers.new_base.modelaccessor import FabricCrossconnectServiceInstance, ServiceInstance, model_accessor
 from synchronizers.new_base.policy import Policy
 from synchronizers.new_base.exceptions import *
 
@@ -38,6 +38,48 @@ class FabricCrossconnectServiceInstancePolicy(Policy):
             if FabricCrossconnectServiceInstance.objects.filter(id=service_instance.id).exists():
                 service_instance.delete()
             return
+
+        # If there is a westbound link, then make sure the SerivceInstance is consistent with the
+        # westbound fields.
+
+        if service_instance.provided_links.exists():
+            updated_fields = []
+
+            si = ServiceInstance.objects.get(id=service_instance.id)
+            s_tag = si.get_westbound_service_instance_properties("s_tag")
+            switch_datapath_id = si.get_westbound_service_instance_properties("switch_datapath_id")
+            source_port = si.get_westbound_service_instance_properties("switch_port")
+
+            if (s_tag is None):
+                raise Exception("Westbound ServiceInstance s-tag is None on fcsi %s" % service_instance.id)
+
+            if (not switch_datapath_id):
+                raise Exception("Westbound ServiceInstance switch_datapath_id is unset on fcsi %s" % service_instance.id)
+
+            if (source_port is None):
+                raise Exception("Westbound ServiceInstance switch_port is None on fcsi %s" % service_instance.id)
+
+            s_tag = int(s_tag)
+            source_port = int(source_port)
+
+            if (s_tag != service_instance.s_tag):
+                if service_instance.s_tag is not None:
+                    raise Exception("Westbound ServiceInstance changing s-tag is not currently permitted")
+                service_instance.s_tag = s_tag
+                updated_fields.append("s_tag")
+            if (switch_datapath_id != service_instance.switch_datapath_id):
+                if service_instance.switch_datapath_id:
+                    raise Exception("Westbound ServiceInstance changing switch_datapath_id is not currently permitted")
+                service_instance.switch_datapath_id = switch_datapath_id
+                updated_fields.append("switch_datapath_id")
+            if (source_port != service_instance.source_port):
+                if service_instance.source_port is not None:
+                    raise Exception("Westbound ServiceInstance changing source_port is not currently permitted")
+                service_instance.source_port = source_port
+                updated_fields.append("source_port")
+
+            if updated_fields:
+                service_instance.save(update_fields = updated_fields)
 
     def handle_delete(self, service_instance):
         log.info("Handle_delete Fabric-Crossconnect Service Instance", service_instance=service_instance)

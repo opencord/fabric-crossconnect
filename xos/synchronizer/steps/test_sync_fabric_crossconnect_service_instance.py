@@ -180,10 +180,13 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
             patch.object(BNGPortMapping.objects, "get_items") as bng_objects, \
             patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
 
-            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service)
+            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service, s_tag=111, west_port=3,
+                                                    dpid="of:0000000000000201", updated=1, policed=2)
 
-            si = self.mock_westbound(fsi, s_tag=111, switch_datapath_id = "of:0000000000000201", switch_port = 3)
-            serviceinstance_objects.return_value = [si]
+            serviceinstance_objects.return_value = [fsi]
+
+            #si = self.mock_westbound(fsi, s_tag=111, switch_datapath_id = "of:0000000000000201", switch_port = 3)
+            #serviceinstance_objects.return_value = [si]
 
             bngmapping = BNGPortMapping(s_tag="111", switch_port=4)
             bng_objects.return_value = [bngmapping]
@@ -206,10 +209,13 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
         with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects, \
             patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
 
-            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service)
+            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service, s_tag=111, west_port=3,
+                                                    dpid="of:0000000000000201", updated=1, policed=2)
 
-            si = self.mock_westbound(fsi, s_tag="111", switch_datapath_id = "of:0000000000000201", switch_port = 3)
-            serviceinstance_objects.return_value = [si]
+            serviceinstance_objects.return_value = [fsi]
+
+            #si = self.mock_westbound(fsi, s_tag="111", switch_datapath_id = "of:0000000000000201", switch_port = 3)
+            #serviceinstance_objects.return_value = [si]
 
             with self.assertRaises(Exception) as e:
                 self.sync_step().sync_record(fsi)

@@ -10,6 +10,10 @@ message FabricCrossconnectService (Service){
 message FabricCrossconnectServiceInstance (ServiceInstance){
     option verbose_name = "Fabric Crossconnect Service Instance";
     option owner_class_name="FabricCrossconnectService";
+
+    optional int32 s_tag = 1 [help_text = "s-tag"];
+    optional string dpid = 2 [help_text = "dpid"];
+    optional int32 west_port = 3 [help_text = "west port"];
 }
 
 message BNGPortMapping (XOSBase) {

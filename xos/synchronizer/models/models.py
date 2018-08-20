@@ -48,5 +48,20 @@ class BNGPortMapping(BNGPortMapping_decl):
 
     def save(self, *args, **kwargs):
         self.validate_range(self.s_tag)
+
+        # We don't currently support changing the s_tag, dpid, or west_port of a FabricCrossconnectServiceInstance.
+        # Need to think through the implications of changing these fields once sharing the same
+        # FabricCrossconnectServiceInstance among many OLTService is supported.
+        # See also SEBA-179.
+
+        if (self.s_tag != self._initial["s_tag"]) and (self._initial["s_tag"] is not None):
+            raise XOSValidationError("s_tag is immutable once set")
+
+        if (self.dpid != self._initial["dpid"]) and (self._initial["dpid"]):
+            raise XOSValidationError("dpid is immutable once set")
+
+        if (self.west_port != self._initial["west_port"]) and (self._initial["west_port"] is not None):
+            raise XOSValidationError("west_port is immutable once set")
+
         super(BNGPortMapping, self).save(*args, **kwargs)
 

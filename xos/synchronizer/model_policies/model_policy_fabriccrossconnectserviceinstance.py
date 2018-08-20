@@ -39,6 +39,30 @@ class FabricCrossconnectServiceInstancePolicy(Policy):
                 service_instance.delete()
             return
 
+        # If there is a westbound link, then make sure the SerivceInstance is consistent with the
+        # westbound fields.
+
+        if self.provided_links.exists():
+            updated_fields = []
+
+            si = ServiceInstance.objects.get(id=self.id)
+            s_tag = int(si.get_westbound_service_instance_properties("s_tag"))
+            dpid = si.get_westbound_service_instance_properties("switch_datapath_id")
+            west_port = int(si.get_westbound_service_instance_properties("switch_port"))
+
+            if (s_tag != self.s_tag):
+                self.s_tag = s_tag
+                updated_fields.append("s_tag")
+            if (dpid != self.dpid):
+                self.dpid = dpid
+                updated_fields.append("dpid")
+            if (west_port != self.west_pod):
+                self.west_pod = west_pod
+                updated_fields.append("west_port")
+
+            if updated_fields:
+                self.save(updated_field = updated_fields)
+
     def handle_delete(self, service_instance):
         log.info("Handle_delete Fabric-Crossconnect Service Instance", service_instance=service_instance)
 

@@ -106,18 +106,23 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
 
         si = ServiceInstance.objects.get(id=o.id)
 
-        s_tag = si.get_westbound_service_instance_properties("s_tag")
-        dpid = si.get_westbound_service_instance_properties("switch_datapath_id")
-        west_port = si.get_westbound_service_instance_properties("switch_port")
+        if (self.s_tag is None):
+            raise Exception("Cannot sync FabricCrossconnectServiceInstance if s_tag is None")
 
-        bng_mapping = self.find_bng(s_tag = s_tag)
+        if (not self.dpid):
+            raise Exception("Cannot sync FabricCrossconnectServiceInstance if dpid is unset")
+
+        if (self.west_port is None):
+            raise Exception("Cannot sync FabricCrossconnectServiceInstance if west_port is None")
+
+        bng_mapping = self.find_bng(s_tag = self.s_tag)
         if not bng_mapping:
             raise Exception("Unable to determine BNG port for s_tag %s" % s_tag)
         east_port = bng_mapping.switch_port
 
-        data = { "deviceId": dpid,
-                 "vlanId": s_tag,
-                 "ports": [ int(west_port), int(east_port) ] } 
+        data = { "deviceId": self.dpid,
+                 "vlanId": self.s_tag,
+                 "ports": [ int(self.west_port), int(east_port) ] }
 
         url = onos['url'] + '/onos/segmentrouting/xconnect'
 

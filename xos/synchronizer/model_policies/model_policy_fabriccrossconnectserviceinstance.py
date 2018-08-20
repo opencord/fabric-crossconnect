@@ -39,6 +39,45 @@ class FabricCrossconnectServiceInstancePolicy(Policy):
                 service_instance.delete()
             return
 
+        # If there is a westbound link, then make sure the SerivceInstance is consistent with the
+        # westbound fields.
+
+        if service_instance.provided_links.exists():
+            updated_fields = []
+
+            si = ServiceInstance.objects.get(id=service_instance.id)
+            s_tag = si.get_westbound_service_instance_properties("s_tag")
+            dpid = si.get_westbound_service_instance_properties("switch_datapath_id")
+            west_port = si.get_westbound_service_instance_properties("switch_port")
+
+            if (s_tag is None):
+                raise Exception("Westbound ServiceInstance s-tag is None on fcsi %s" % service_instance.id)
+
+            if (west_port is None):
+                raise Exception("Westbound switch_port is None on fcsi %s" % service_instance.id)
+
+            s_tag = int(s_tag)
+            west_port = int(west_port)
+
+            if (s_tag != service_instance.s_tag):
+                if service_instance.s_tag is not None:
+                    raise Exception("Westbound ServiceInstance changing s-tag is not currently permitted")
+                service_instance.s_tag = s_tag
+                updated_fields.append("s_tag")
+            if (dpid != service_instance.dpid):
+                if service_instance.dpid:
+                    raise Exception("Westbound ServiceInstance changing dpid is not currently permitted")
+                service_instance.dpid = dpid
+                updated_fields.append("dpid")
+            if (west_port != service_instance.west_pod):
+                if service_instance.west_pod is not None:
+                    raise Exception("Westbound ServiceInstance changing port is not currently permitted")
+                service_instance.west_pod = west_pod
+                updated_fields.append("west_port")
+
+            if updated_fields:
+                service_instance.save(updated_field = updated_fields)
+
     def handle_delete(self, service_instance):
         log.info("Handle_delete Fabric-Crossconnect Service Instance", service_instance=service_instance)
 

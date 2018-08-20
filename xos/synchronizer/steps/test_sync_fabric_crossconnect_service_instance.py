@@ -180,10 +180,13 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
             patch.object(BNGPortMapping.objects, "get_items") as bng_objects, \
             patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
 
-            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service)
+            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service, s_tag=111, west_port=3,
+                                                    dpid="of:0000000000000201", updated=1, policed=2)
 
-            si = self.mock_westbound(fsi, s_tag=111, switch_datapath_id = "of:0000000000000201", switch_port = 3)
-            serviceinstance_objects.return_value = [si]
+            serviceinstance_objects.return_value = [fsi]
+
+            #si = self.mock_westbound(fsi, s_tag=111, switch_datapath_id = "of:0000000000000201", switch_port = 3)
+            #serviceinstance_objects.return_value = [si]
 
             bngmapping = BNGPortMapping(s_tag="111", switch_port=4)
             bng_objects.return_value = [bngmapping]
@@ -206,15 +209,74 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
         with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects, \
             patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
 
-            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service)
+            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service, s_tag=111, west_port=3,
+                                                    dpid="of:0000000000000201", updated=1, policed=2)
 
-            si = self.mock_westbound(fsi, s_tag="111", switch_datapath_id = "of:0000000000000201", switch_port = 3)
-            serviceinstance_objects.return_value = [si]
+            serviceinstance_objects.return_value = [fsi]
+
+            #si = self.mock_westbound(fsi, s_tag="111", switch_datapath_id = "of:0000000000000201", switch_port = 3)
+            #serviceinstance_objects.return_value = [si]
 
             with self.assertRaises(Exception) as e:
                 self.sync_step().sync_record(fsi)
 
             self.assertEqual(e.exception.message, "Unable to determine BNG port for s_tag 111")
+
+    def test_sync_not_policed(self):
+        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects, \
+            patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
+
+            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service, west_port=3,
+                                                    dpid="of:0000000000000201", updated=1, policed=0)
+
+            serviceinstance_objects.return_value = [fsi]
+
+            with self.assertRaises(Exception) as e:
+                self.sync_step().sync_record(fsi)
+
+            self.assertEqual(e.exception.message, "Waiting for model_policy to run on fcsi 7777")
+
+    def test_sync_no_s_tag(self):
+        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects, \
+            patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
+
+            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service, west_port=3,
+                                                    dpid="of:0000000000000201", updated=1, policed=2)
+
+            serviceinstance_objects.return_value = [fsi]
+
+            with self.assertRaises(Exception) as e:
+                self.sync_step().sync_record(fsi)
+
+            self.assertEqual(e.exception.message, "Cannot sync FabricCrossconnectServiceInstance if s_tag is None on fcsi 7777")
+
+    def test_sync_no_dpid(self):
+        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects, \
+            patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
+
+            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service, west_port=3, s_tag=111,
+                                                    updated=1, policed=2)
+
+            serviceinstance_objects.return_value = [fsi]
+
+            with self.assertRaises(Exception) as e:
+                self.sync_step().sync_record(fsi)
+
+            self.assertEqual(e.exception.message, "Cannot sync FabricCrossconnectServiceInstance if dpid is unset on fcsi 7777")
+
+    def test_sync_no_west_port(self):
+        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects, \
+            patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
+
+            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service, s_tag=111,
+                                                    dpid="of:0000000000000201", updated=1, policed=2)
+
+            serviceinstance_objects.return_value = [fsi]
+
+            with self.assertRaises(Exception) as e:
+                self.sync_step().sync_record(fsi)
+
+            self.assertEqual(e.exception.message, "Cannot sync FabricCrossconnectServiceInstance if west_port is None on fcsi 7777")
 
     @requests_mock.Mocker()
     def test_delete(self, m):

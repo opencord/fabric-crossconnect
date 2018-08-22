@@ -292,31 +292,6 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
             self.sync_step().delete_record(fsi)
             self.assertTrue(m.called)
 
-    @requests_mock.Mocker()
-    def test_delete_in_use(self, m):
-        with patch.object(FabricCrossconnectServiceInstance.objects, "get_items") as fcsi_objects:
-            # The subscriber we want to delete
-            fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service,
-                                                    backend_handle="111/of:0000000000000201",
-                                                    enacted=True)
-
-            # Another subscriber using the same (s_tag, switch_datapath_id) pair
-            fsi2 = FabricCrossconnectServiceInstance(id=7778, owner=self.service,
-                                                     backend_handle="111/of:0000000000000201",
-                                                     enacted=True)
-
-            fcsi_objects.return_value=[fsi, fsi2]
-
-            desired_data = {"deviceId": "of:0000000000000201",
-                            "vlanId": 111}
-
-            m.delete("http://onos-fabric:8181/onos/segmentrouting/xconnect",
-                   status_code=204,
-                   additional_matcher=functools.partial(match_json, desired_data))
-
-            self.sync_step().delete_record(fsi)
-            self.assertFalse(m.called)
-
     def tearDown(self):
         self.o = None
         sys.path = self.sys_path_save

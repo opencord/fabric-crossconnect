@@ -11,9 +11,9 @@ message FabricCrossconnectServiceInstance (ServiceInstance){
     option verbose_name = "Fabric Crossconnect Service Instance";
     option owner_class_name="FabricCrossconnectService";
 
-    optional int32 s_tag = 1 [help_text = "s-tag"];
-    optional string switch_datapath_id = 2 [help_text = "switch datapath id"];
-    optional int32 source_port = 3 [help_text = "source port of fabric crossconnect"];
+    required int32 s_tag = 1 [help_text = "s-tag"];
+    required string switch_datapath_id = 2 [help_text = "switch datapath id"];
+    required int32 source_port = 3 [help_text = "source port of fabric crossconnect"];
 }
 
 message BNGPortMapping (XOSBase) {

@@ -152,13 +152,6 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
         if o.backend_handle:
             onos = self.get_fabric_onos_info(o)
 
-            # If some other subscriber is using the same entry, then we shouldn't delete it
-            other_subscribers = FabricCrossconnectServiceInstance.objects.filter(backend_handle=o.backend_handle)
-            other_subscribers = [x for x in other_subscribers if x.id != o.id]
-            if other_subscribers:
-                self.log.info("Other subscribers exist using same fabric crossconnect entry. Not deleting.")
-                return
-
             # backend_handle has everything we need in it to delete this entry.
             (s_tag, switch_datapath_id) = self.extract_handle(o.backend_handle)
 

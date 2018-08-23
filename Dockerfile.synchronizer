@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# docker build -t xosproject/fabric-crossconnect-synchronizer:candidate -f Dockerfile.synchronizer .
+
 # xosproject/fabric-crossconnect-synchronizer
 
-FROM xosproject/xos-synchronizer-base:2.0.0
+FROM xosproject/xos-synchronizer-base:master
 
 COPY xos/synchronizer /opt/xos/synchronizers/fabric-crossconnect
 COPY VERSION /opt/xos/synchronizers/fabric-crossconnect/

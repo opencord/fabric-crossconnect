@@ -58,7 +58,7 @@ class KubernetesPodDetailsEventStep(EventStep):
 
         for service in FabricCrossconnectService.objects.all():
             fabric_onos = KubernetesPodDetailsEventStep.get_fabric_onos(service)
-            if (fabric_onos.name != xos_service):
+            if (fabric_onos.name.lower() != xos_service.lower()):
                 continue
 
             for service_instance in service.service_instances.all():

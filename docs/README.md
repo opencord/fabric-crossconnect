@@ -12,12 +12,12 @@ This service is comprised of three models:
 
 - `FabricCrossconnectService` global service-related parameters, such as the name of the service. There is currently no additional state here beyond the default `XOS` `Service` model.
 - `FabricCrossconnectServiceInstance` represents one half of a vlan crossconnect. Fields include the following:
-	- `s-tag` the vlan_id that will be connected
-	- `switch_datapath_id` switch id where the vlan crossconnect will be enacted
-	- `source_port` port number on the switch
+    - `s-tag` the vlan_id that will be connected
+    - `switch_datapath_id` switch id where the vlan crossconnect will be enacted
+    - `source_port` port number on the switch
 - `BNGPortMapping` represents the other half of a vlan crossconnect. Fields include the following:
-	- `s_tag` the vlan_id that will be connected. In addition to specifying a single vlan_id, the keyword `ANY` may be used, or a range (`123-456`) may be used.
-	- `switch_port` port number on the switch
+    - `s_tag` the vlan_id that will be connected. In addition to specifying a single vlan_id, the keyword `ANY` may be used, or a range (`123-456`) may be used.
+    - `switch_port` port number on the switch
 
 `FabricCrossconnectServiceInstance` and `BNGPortMapping` work together to create the vlan crossconnect tuple, linked by a common `s-tag`.
 

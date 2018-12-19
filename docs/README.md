@@ -8,7 +8,7 @@ For more information, see [VLAN Cross Connect](https://wiki.opencord.org/display
 
 ## Models
 
-This service is comprised of three models:
+This service is composed of three models:
 
 - `FabricCrossconnectService` global service-related parameters, such as the name of the service. There is currently no additional state here beyond the default `XOS` `Service` model.
 - `FabricCrossconnectServiceInstance` represents one half of a vlan crossconnect. Fields include the following:

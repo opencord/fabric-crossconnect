@@ -4,19 +4,35 @@ option legacy = "True";
 
 message FabricCrossconnectService (Service){
     option verbose_name = "Fabric Crossconnect Service";
-    option description="Fabric Crossconnect implementation";
+    option description = "Service that implements connectivity through the aggregation switch by crossconnecting ports";
 }
 
 message FabricCrossconnectServiceInstance (ServiceInstance){
     option verbose_name = "Fabric Crossconnect Service Instance";
-    option owner_class_name="FabricCrossconnectService";
+    option owner_class_name = "FabricCrossconnectService";
+    option description = "Tenancy in the fabric crossconnect service, representing one s-tag routed through the agg switch";
 
-    required int32 s_tag = 1 [help_text = "s-tag"];
-    required string switch_datapath_id = 2 [help_text = "switch datapath id"];
-    required int32 source_port = 3 [help_text = "source port of fabric crossconnect"];
+    required int32 s_tag = 1 [
+        help_text = "vlan tag of packets to crossconnect"];
+    required string switch_datapath_id = 2 [
+        help_text = "Datapath id of switch where crossconnect will be installed",
+        content_type = "stripped",
+        max_length=256];
+    required int32 source_port = 3 [
+        help_text = "switch port where access device or VM is connected"];
 }
 
 message BNGPortMapping (XOSBase) {
-    required string s_tag = 1 [help_text = "Single s-tag, range of s-tags, or ANY", null = False, db_index = False, blank = False, unique=True, tosca_key=True];
-    required int32 switch_port = 2 [help_text = "Port Number", null = False, db_index = False, blank = False];
+    required string s_tag = 1 [
+        help_text = "Single s-tag, range of s-tags, or 'ANY'",
+        blank = False,
+        db_index = False,
+        null = False,
+        tosca_key = True,
+        unique = True];
+    required int32 switch_port = 2 [
+        help_text = "Switch port where BNG or other egress point is connected",
+        blank = False,
+        db_index = False,
+        null = False];
 }

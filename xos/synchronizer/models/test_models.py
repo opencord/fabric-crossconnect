@@ -17,11 +17,6 @@ import os, sys
 from mock import patch, Mock, MagicMock
 
 test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-service_dir=os.path.join(test_path, "../../../..")
-xos_dir=os.path.join(test_path, "../../..")
-if not os.path.exists(os.path.join(test_path, "new_base")):
-    xos_dir=os.path.join(test_path, "../../../../../../orchestration/xos/xos")
-    services_dir=os.path.join(xos_dir, "../../xos_services")
 
 # mocking XOS exception, as they're based in Django
 class Exceptions:
@@ -36,7 +31,6 @@ class TestFabricCrossconnectModels(unittest.TestCase):
     def setUp(self):
 
         self.sys_path_save = sys.path
-        sys.path.append(xos_dir)
 
         self.xos = XOS
 
@@ -48,6 +42,7 @@ class TestFabricCrossconnectModels(unittest.TestCase):
 
 
         modules = {
+            'xos': MagicMock(),
             'xos.exceptions': self.xos.exceptions,
             'models_decl': self.models_decl
         }

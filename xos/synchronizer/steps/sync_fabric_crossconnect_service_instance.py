@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from synchronizers.new_base.syncstep import SyncStep, DeferredException
-from synchronizers.new_base.modelaccessor import model_accessor, FabricCrossconnectServiceInstance, ServiceInstance, BNGPortMapping
+from xossynchronizer.steps.syncstep import SyncStep, DeferredException
+from xossynchronizer.modelaccessor import model_accessor, FabricCrossconnectServiceInstance, ServiceInstance, BNGPortMapping
 
 from xosconfig import Config
 from multistructlog import create_logger

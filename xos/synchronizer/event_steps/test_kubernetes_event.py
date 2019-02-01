@@ -20,27 +20,7 @@ import requests_mock
 
 import os, sys
 
-# Hack to load synchronizer framework
 test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-xos_dir=os.path.join(test_path, "../../..")
-if not os.path.exists(os.path.join(test_path, "new_base")):
-    xos_dir=os.path.join(test_path, "../../../../../../orchestration/xos/xos")
-    services_dir = os.path.join(xos_dir, "../../xos_services")
-sys.path.append(xos_dir)
-sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
-# END Hack to load synchronizer framework
-
-# generate model from xproto
-def get_models_fn(service_name, xproto_name):
-    name = os.path.join(service_name, "xos", xproto_name)
-    if os.path.exists(os.path.join(services_dir, name)):
-        return name
-    else:
-        name = os.path.join(service_name, "xos", "synchronizer", "models", xproto_name)
-        if os.path.exists(os.path.join(services_dir, name)):
-            return name
-    raise Exception("Unable to find service=%s xproto=%s" % (service_name, xproto_name))
-# END generate model from xproto
 
 class TestKubernetesEvent(unittest.TestCase):
 
@@ -48,8 +28,6 @@ class TestKubernetesEvent(unittest.TestCase):
         global DeferredException
 
         self.sys_path_save = sys.path
-        sys.path.append(xos_dir)
-        sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
 
         # Setting up the config module
         from xosconfig import Config
@@ -58,16 +36,18 @@ class TestKubernetesEvent(unittest.TestCase):
         Config.init(config, "synchronizer-config-schema.yaml")
         # END Setting up the config module
 
-        from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
-        build_mock_modelaccessor(xos_dir, services_dir, [
-            get_models_fn("fabric-crossconnect", "fabric-crossconnect.xproto"),
-            get_models_fn("onos-service", "onos.xproto"),
-        ])
-        import synchronizers.new_base.mock_modelaccessor
-        reload(synchronizers.new_base.mock_modelaccessor) # in case nose2 loaded it in a previous test
-        import synchronizers.new_base.modelaccessor
-        reload(synchronizers.new_base.modelaccessor)      # in case nose2 loaded it in a previous test
-        from synchronizers.new_base.modelaccessor import model_accessor
+        from xossynchronizer.mock_modelaccessor_build import mock_modelaccessor_config
+        mock_modelaccessor_config(test_path, [("fabric-crossconnect", "fabric-crossconnect.xproto"),
+                                              ("onos-service", "onos.xproto")])
+
+        import xossynchronizer.modelaccessor
+        import mock_modelaccessor
+        reload(mock_modelaccessor) # in case nose2 loaded it in a previous test
+        reload(xossynchronizer.modelaccessor)      # in case nose2 loaded it in a previous test
+
+        from xossynchronizer.modelaccessor import model_accessor
+        self.model_accessor = model_accessor
+
         from mock_modelaccessor import MockObjectList
 
         from kubernetes_event import KubernetesPodDetailsEventStep
@@ -122,7 +102,7 @@ class TestKubernetesEvent(unittest.TestCase):
             event = Mock()
             event.value = json.dumps(event_dict)
 
-            step = self.event_step(log=self.log)
+            step = self.event_step(model_accessor=self.model_accessor, log=self.log)
             step.process_event(event)
 
             self.assertEqual(self.fcsi1.backend_code, 0)
@@ -148,7 +128,7 @@ class TestKubernetesEvent(unittest.TestCase):
             event = Mock()
             event.value = json.dumps(event_dict)
 
-            step = self.event_step(log=self.log)
+            step = self.event_step(model_accessor=self.model_accessor, log=self.log)
             step.process_event(event)
 
             self.assertEqual(self.fcsi1.backend_code, 1)
@@ -171,7 +151,7 @@ class TestKubernetesEvent(unittest.TestCase):
             event = Mock()
             event.value = json.dumps(event_dict)
 
-            step = self.event_step(log=self.log)
+            step = self.event_step(model_accessor=self.model_accessor, log=self.log)
             step.process_event(event)
 
             self.assertEqual(self.fcsi1.backend_code, 1)
@@ -193,7 +173,7 @@ class TestKubernetesEvent(unittest.TestCase):
             event = Mock()
             event.value = json.dumps(event_dict)
 
-            step = self.event_step(log=self.log)
+            step = self.event_step(model_accessor=self.model_accessor, log=self.log)
             step.process_event(event)
 
             self.assertEqual(self.fcsi1.backend_code, 1)

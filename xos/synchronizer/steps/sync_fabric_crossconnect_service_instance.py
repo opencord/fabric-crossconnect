@@ -142,7 +142,7 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
         #   to detect someone changing those.
 
         o.backend_handle = self.make_handle(o.s_tag, o.switch_datapath_id)
-        o.save(update_fields=["backend_handle"])
+        o.save_changed_fields()
 
         self.log.info("ONOS response", res=r.text)
 

@@ -15,6 +15,7 @@
 
 
 name: fabric-crossconnect
+core_version: ">=2.2.1"
 required_models:
   - FabricCrossconnectService
   - FabricCrossconnectServiceInstance

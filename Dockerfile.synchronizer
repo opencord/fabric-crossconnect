@@ -16,7 +16,7 @@
 
 # xosproject/fabric-crossconnect-synchronizer
 
-FROM xosproject/xos-synchronizer-base:2.2.5
+FROM xosproject/xos-synchronizer-base:2.2.18
 COPY xos/synchronizer /opt/xos/synchronizers/fabric-crossconnect
 COPY VERSION /opt/xos/synchronizers/fabric-crossconnect/
 

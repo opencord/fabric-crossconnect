@@ -13,19 +13,24 @@
 # limitations under the License.
 
 import unittest
-import os, sys
+import os
+import sys
 from mock import patch, Mock, MagicMock
 
-test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+test_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 
 # mocking XOS exception, as they're based in Django
+
+
 class Exceptions:
     XOSValidationError = Exception
     XOSProgrammingError = Exception
     XOSPermissionDenied = Exception
 
+
 class XOS:
     exceptions = Exceptions
+
 
 class TestFabricCrossconnectModels(unittest.TestCase):
     def setUp(self):
@@ -39,7 +44,6 @@ class TestFabricCrossconnectModels(unittest.TestCase):
         self.models_decl.BNGPortMapping_decl.save = Mock()
         self.models_decl.BNGPortMapping_decl.objects = Mock()
         self.models_decl.BNGPortMapping_decl.objects.filter.return_value = []
-
 
         modules = {
             'xos': MagicMock(),
@@ -114,6 +118,7 @@ class TestFabricCrossconnectModels(unittest.TestCase):
             bpm.validate_range("123,")
 
         self.assertEqual(e.exception.message, 'Malformed range 123,')
+
 
 if __name__ == '__main__':
     unittest.main()

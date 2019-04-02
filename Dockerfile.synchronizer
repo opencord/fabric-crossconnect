@@ -16,7 +16,14 @@
 
 # xosproject/fabric-crossconnect-synchronizer
 
-FROM xosproject/xos-synchronizer-base:2.2.18
+FROM xosproject/alpine-grpc-base:0.9.0
+
+# Install pip packages
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt \
+ && pip freeze > /var/xos/pip_freeze_fabric_crossconnect_service_`date -u +%Y%m%dT%H%M%S`
+
+# Copy Files
 COPY xos/synchronizer /opt/xos/synchronizers/fabric-crossconnect
 COPY VERSION /opt/xos/synchronizers/fabric-crossconnect/
 

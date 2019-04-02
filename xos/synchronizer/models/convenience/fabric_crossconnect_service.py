@@ -14,8 +14,9 @@
 # limitations under the License.
 
 
-from xosapi.orm import ORMWrapper, register_convenience_wrapper
+from xosapi.orm import register_convenience_wrapper
 from xosapi.convenience.service import ORMWrapperService
+
 
 class ORMWrapperFabricCrossconnectService(ORMWrapperService):
 
@@ -45,9 +46,9 @@ class ORMWrapperFabricCrossconnectService(ORMWrapperService):
             provider_service_instance = candidates[0]
         else:
             provider_service_instance = FabricCrossconnectServiceInstance(owner=self,
-                                                                        s_tag=s_tag,
-                                                                        switch_datapath_id=switch_datapath_id,
-                                                                        source_port=source_port)
+                                                                          s_tag=s_tag,
+                                                                          switch_datapath_id=switch_datapath_id,
+                                                                          source_port=source_port)
             provider_service_instance.save()
 
         # NOTE: Lack-of-atomicity vulnerability -- provider_service_instance could be deleted before we created the
@@ -77,7 +78,7 @@ class ORMWrapperFabricCrossconnectService(ORMWrapperService):
             if link.provider_service_instance.owner.id == self.id:
                 fcsi = link.provider_service_instance.leaf_model
                 if (fcsi.s_tag == s_tag) and (fcsi.switch_datapath_id == switch_datapath_id) and \
-                    (fcsi.source_port == source_port):
+                        (fcsi.source_port == source_port):
                     matched.append(fcsi)
                 else:
                     link.delete()
@@ -91,7 +92,8 @@ class ORMWrapperFabricCrossconnectService(ORMWrapperService):
         """
 
         s_tag = subscriber_si.get_westbound_service_instance_properties("s_tag", include_self=True)
-        switch_datapath_id = subscriber_si.get_westbound_service_instance_properties("switch_datapath_id", include_self=True)
+        switch_datapath_id = subscriber_si.get_westbound_service_instance_properties(
+            "switch_datapath_id", include_self=True)
         source_port = subscriber_si.get_westbound_service_instance_properties("switch_port", include_self=True)
 
         if (s_tag is None):
@@ -107,5 +109,6 @@ class ORMWrapperFabricCrossconnectService(ORMWrapperService):
         source_port = int(source_port)
 
         return (s_tag, switch_datapath_id, source_port)
+
 
 register_convenience_wrapper("FabricCrossconnectService", ORMWrapperFabricCrossconnectService)

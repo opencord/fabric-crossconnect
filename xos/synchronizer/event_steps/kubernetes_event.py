@@ -24,6 +24,7 @@ from multistructlog import create_logger
 
 log = create_logger(Config().get('logging'))
 
+
 class KubernetesPodDetailsEventStep(EventStep):
     topics = ["xos.kubernetes.pod-details"]
     technology = "kafka"
@@ -63,6 +64,11 @@ class KubernetesPodDetailsEventStep(EventStep):
 
             for service_instance in service.service_instances.all():
                 log.info("Dirtying FabricCrossconnectServiceInstance", service_instance=service_instance)
-                service_instance.backend_code=0
-                service_instance.backend_status="resynchronize due to kubernetes event"
-                service_instance.save(update_fields=["updated", "backend_code", "backend_status"], always_update_timestamp=True)
+                service_instance.backend_code = 0
+                service_instance.backend_status = "resynchronize due to kubernetes event"
+                service_instance.save(
+                    update_fields=[
+                        "updated",
+                        "backend_code",
+                        "backend_status"],
+                    always_update_timestamp=True)

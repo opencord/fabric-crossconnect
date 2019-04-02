@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3d4654a1_9b4e4652",
+        "filename": "Dockerfile.synchronizer",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1000011
+      },
+      "writtenOn": "2019-04-02T15:35:19Z",
+      "side": 1,
+      "message": "fabric_crossconnect_service",
+      "range": {
+        "startLine": 24,
+        "startChar": 37,
+        "endLine": 24,
+        "endChar": 48
+      },
+      "revId": "f935a98944a03d7602c713a2faf3c1401e2ecf85",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2cdaa34_56303e65",
+        "filename": "VERSION",
+        "patchSetId": 4
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1000011
+      },
+      "writtenOn": "2019-04-02T15:35:19Z",
+      "side": 1,
+      "message": "dev version?",
+      "range": {
+        "startLine": 1,
+        "startChar": 4,
+        "endLine": 1,
+        "endChar": 10
+      },
+      "revId": "f935a98944a03d7602c713a2faf3c1401e2ecf85",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": true
+    }
+  ]
+}

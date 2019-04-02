@@ -16,12 +16,12 @@
 
 from xossynchronizer.modelaccessor import FabricCrossconnectServiceInstance, ServiceInstance, model_accessor
 from xossynchronizer.model_policies.policy import Policy
-from xossynchronizer.exceptions import *
 
 from xosconfig import Config
 from multistructlog import create_logger
 
 log = create_logger(Config().get('logging'))
+
 
 class FabricCrossconnectServiceInstancePolicy(Policy):
     model_name = "FabricCrossconnectServiceInstance"
@@ -41,5 +41,3 @@ class FabricCrossconnectServiceInstancePolicy(Policy):
 
     def handle_delete(self, service_instance):
         log.info("Handle_delete Fabric-Crossconnect Service Instance", service_instance=service_instance)
-
-

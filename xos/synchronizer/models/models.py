@@ -16,13 +16,16 @@ from xos.exceptions import XOSValidationError
 
 from models_decl import FabricCrossconnectService_decl, FabricCrossconnectServiceInstance_decl, BNGPortMapping_decl
 
+
 class FabricCrossconnectService(FabricCrossconnectService_decl):
     class Meta:
         proxy = True
 
+
 class FabricCrossconnectServiceInstance(FabricCrossconnectServiceInstance_decl):
-   class Meta:
+    class Meta:
         proxy = True
+
 
 class BNGPortMapping(BNGPortMapping_decl):
     class Meta:
@@ -38,7 +41,7 @@ class BNGPortMapping(BNGPortMapping_decl):
                     int(last.strip())
                 except ValueError:
                     raise XOSValidationError("Malformed range %s" % pattern)
-            elif this_range.lower()=="any":
+            elif this_range.lower() == "any":
                 pass
             else:
                 try:
@@ -50,4 +53,3 @@ class BNGPortMapping(BNGPortMapping_decl):
         self.validate_range(self.s_tag)
 
         super(BNGPortMapping, self).save(*args, **kwargs)
-

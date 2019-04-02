@@ -15,23 +15,24 @@
 import unittest
 
 import functools
-from mock import patch, call, Mock, PropertyMock, MagicMock
-import requests_mock
-import multistructlog
-from multistructlog import create_logger
+from mock import patch, Mock
 
-import os, sys
+import os
+import sys
 
-test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+test_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+
 
 def mock_get_westbound_service_instance_properties(props, prop):
     return props[prop]
 
+
 def match_json(desired, req):
-    if desired!=req.json():
+    if desired != req.json():
         raise Exception("Got request %s, but body is not matching" % req.url)
         return False
     return True
+
 
 class TestPolicyFabricCrossconnectServiceInstance(unittest.TestCase):
 
@@ -48,11 +49,11 @@ class TestPolicyFabricCrossconnectServiceInstance(unittest.TestCase):
         # END Setting up the config module
 
         from xossynchronizer.mock_modelaccessor_build import mock_modelaccessor_config
-        mock_modelaccessor_config(test_path, [("fabric-crossconnect", "fabric-crossconnect.xproto"),])
+        mock_modelaccessor_config(test_path, [("fabric-crossconnect", "fabric-crossconnect.xproto"), ])
 
         import xossynchronizer.modelaccessor
         import mock_modelaccessor
-        reload(mock_modelaccessor) # in case nose2 loaded it in a previous test
+        reload(mock_modelaccessor)  # in case nose2 loaded it in a previous test
         reload(xossynchronizer.modelaccessor)      # in case nose2 loaded it in a previous test
 
         from model_policy_fabriccrossconnectserviceinstance import FabricCrossconnectServiceInstancePolicy, \
@@ -68,14 +69,14 @@ class TestPolicyFabricCrossconnectServiceInstance(unittest.TestCase):
         self.policy_step.log = Mock()
 
         # mock onos-fabric
-        self.onos_fabric = Service(name = "onos-fabric",
-                              rest_hostname = "onos-fabric",
-                              rest_port = "8181",
-                              rest_username = "onos",
-                              rest_password = "rocks")
+        self.onos_fabric = Service(name="onos-fabric",
+                                   rest_hostname="onos-fabric",
+                                   rest_port="8181",
+                                   rest_username="onos",
+                                   rest_password="rocks")
 
-        self.service = FabricCrossconnectService(name = "fcservice",
-                                                 provider_services = [self.onos_fabric])
+        self.service = FabricCrossconnectService(name="fcservice",
+                                                 provider_services=[self.onos_fabric])
 
     def mock_westbound(self, fsi, s_tag, switch_datapath_id, switch_port):
         # Mock out a ServiceInstance so the syncstep can call get_westbound_service_instance_properties on it
@@ -86,20 +87,18 @@ class TestPolicyFabricCrossconnectServiceInstance(unittest.TestCase):
              "switch_datapath_id": switch_datapath_id,
              "switch_port": switch_port})
 
-        fsi.provided_links=Mock(exists=Mock(return_value=True))
+        fsi.provided_links = Mock(exists=Mock(return_value=True))
 
         return si
 
     def test_handle_update(self):
-        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects, \
-            patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
-
+        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects:
             fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service, s_tag=None, source_port=None,
                                                     switch_datapath_id=None)
 
             serviceinstance_objects.return_value = [fsi]
 
-            si = self.mock_westbound(fsi, s_tag=111, switch_datapath_id = "of:0000000000000201", switch_port = 3)
+            si = self.mock_westbound(fsi, s_tag=111, switch_datapath_id="of:0000000000000201", switch_port=3)
             serviceinstance_objects.return_value = [si]
 
             self.policy_step(model_accessor=self.model_accessor).handle_update(fsi)
@@ -107,6 +106,7 @@ class TestPolicyFabricCrossconnectServiceInstance(unittest.TestCase):
     def tearDown(self):
         self.o = None
         sys.path = self.sys_path_save
+
 
 if __name__ == '__main__':
     unittest.main()

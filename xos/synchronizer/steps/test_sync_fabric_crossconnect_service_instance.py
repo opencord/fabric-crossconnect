@@ -15,23 +15,25 @@
 import unittest
 
 import functools
-from mock import patch, call, Mock, PropertyMock, MagicMock
+from mock import patch, Mock
 import requests_mock
-import multistructlog
-from multistructlog import create_logger
 
-import os, sys
+import os
+import sys
 
-test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+test_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+
 
 def mock_get_westbound_service_instance_properties(props, prop):
     return props[prop]
 
+
 def match_json(desired, req):
-    if desired!=req.json():
+    if desired != req.json():
         raise Exception("Got request %s, but body is not matching" % req.url)
         return False
     return True
+
 
 class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
 
@@ -48,11 +50,11 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
         # END Setting up the config module
 
         from xossynchronizer.mock_modelaccessor_build import mock_modelaccessor_config
-        mock_modelaccessor_config(test_path, [("fabric-crossconnect", "fabric-crossconnect.xproto"),])
+        mock_modelaccessor_config(test_path, [("fabric-crossconnect", "fabric-crossconnect.xproto"), ])
 
         import xossynchronizer.modelaccessor
         import mock_modelaccessor
-        reload(mock_modelaccessor) # in case nose2 loaded it in a previous test
+        reload(mock_modelaccessor)  # in case nose2 loaded it in a previous test
         reload(xossynchronizer.modelaccessor)      # in case nose2 loaded it in a previous test
 
         from xossynchronizer.modelaccessor import model_accessor
@@ -69,14 +71,14 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
         self.sync_step.log = Mock()
 
         # mock onos-fabric
-        self.onos_fabric = Service(name = "onos-fabric",
-                              rest_hostname = "onos-fabric",
-                              rest_port = "8181",
-                              rest_username = "onos",
-                              rest_password = "rocks")
+        self.onos_fabric = Service(name="onos-fabric",
+                                   rest_hostname="onos-fabric",
+                                   rest_port="8181",
+                                   rest_username="onos",
+                                   rest_password="rocks")
 
-        self.service = FabricCrossconnectService(name = "fcservice",
-                                                 provider_services = [self.onos_fabric])
+        self.service = FabricCrossconnectService(name="fcservice",
+                                                 provider_services=[self.onos_fabric])
 
     def mock_westbound(self, fsi, s_tag, switch_datapath_id, switch_port):
         # Mock out a ServiceInstance so the syncstep can call get_westbound_service_instance_properties on it
@@ -163,8 +165,8 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
     @requests_mock.Mocker()
     def test_sync(self, m):
         with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects, \
-            patch.object(BNGPortMapping.objects, "get_items") as bng_objects, \
-            patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
+                patch.object(BNGPortMapping.objects, "get_items") as bng_objects, \
+                patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
 
             fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service, s_tag=111, source_port=3,
                                                     switch_datapath_id="of:0000000000000201", updated=1, policed=2)
@@ -175,8 +177,8 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
             bng_objects.return_value = [bngmapping]
 
             desired_data = {"deviceId": "of:0000000000000201",
-                    "vlanId": 111,
-                    "ports": [3, 4]}
+                            "vlanId": 111,
+                            "ports": [3, 4]}
 
             m.post("http://onos-fabric:8181/onos/segmentrouting/xconnect",
                    status_code=200,
@@ -189,8 +191,7 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
             fcsi_save.assert_called()
 
     def test_sync_no_bng_mapping(self):
-        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects, \
-            patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
+        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects:
 
             fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service, s_tag=111, source_port=3,
                                                     switch_datapath_id="of:0000000000000201", updated=1, policed=2)
@@ -203,8 +204,7 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
             self.assertEqual(e.exception.message, "Unable to determine BNG port for s_tag 111")
 
     def test_sync_not_policed(self):
-        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects, \
-            patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
+        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects:
 
             fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service, source_port=3,
                                                     switch_datapath_id="of:0000000000000201", updated=1, policed=0)
@@ -217,8 +217,7 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
             self.assertEqual(e.exception.message, "Waiting for model_policy to run on fcsi 7777")
 
     def test_sync_no_s_tag(self):
-        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects, \
-            patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
+        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects:
 
             fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service, source_port=3,
                                                     switch_datapath_id="of:0000000000000201", updated=1, policed=2)
@@ -228,11 +227,11 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
             with self.assertRaises(Exception) as e:
                 self.sync_step(model_accessor=self.model_accessor).sync_record(fsi)
 
-            self.assertEqual(e.exception.message, "Cannot sync FabricCrossconnectServiceInstance if s_tag is None on fcsi 7777")
+            self.assertEqual(e.exception.message,
+                             "Cannot sync FabricCrossconnectServiceInstance if s_tag is None on fcsi 7777")
 
     def test_sync_no_switch_datapath_id(self):
-        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects, \
-            patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
+        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects:
 
             fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service, source_port=3, s_tag=111,
                                                     updated=1, policed=2)
@@ -242,11 +241,12 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
             with self.assertRaises(Exception) as e:
                 self.sync_step(model_accessor=self.model_accessor).sync_record(fsi)
 
-            self.assertEqual(e.exception.message, "Cannot sync FabricCrossconnectServiceInstance if switch_datapath_id is unset on fcsi 7777")
+            self.assertEqual(
+                e.exception.message,
+                "Cannot sync FabricCrossconnectServiceInstance if switch_datapath_id is unset on fcsi 7777")
 
     def test_sync_no_source_port(self):
-        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects, \
-            patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
+        with patch.object(ServiceInstance.objects, "get_items") as serviceinstance_objects:
 
             fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service, s_tag=111,
                                                     switch_datapath_id="of:0000000000000201", updated=1, policed=2)
@@ -256,24 +256,24 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
             with self.assertRaises(Exception) as e:
                 self.sync_step(model_accessor=self.model_accessor).sync_record(fsi)
 
-            self.assertEqual(e.exception.message, "Cannot sync FabricCrossconnectServiceInstance if source_port is None on fcsi 7777")
+            self.assertEqual(e.exception.message,
+                             "Cannot sync FabricCrossconnectServiceInstance if source_port is None on fcsi 7777")
 
     @requests_mock.Mocker()
     def test_delete(self, m):
-        with patch.object(FabricCrossconnectServiceInstance.objects, "get_items") as fcsi_objects, \
-                patch.object(FabricCrossconnectServiceInstance, "save") as fcsi_save:
+        with patch.object(FabricCrossconnectServiceInstance.objects, "get_items") as fcsi_objects:
             fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service,
                                                     backend_handle="111/of:0000000000000201",
                                                     enacted=True)
 
-            fcsi_objects.return_value=[fsi]
+            fcsi_objects.return_value = [fsi]
 
             desired_data = {"deviceId": "of:0000000000000201",
                             "vlanId": 111}
 
             m.delete("http://onos-fabric:8181/onos/segmentrouting/xconnect",
-                   status_code=204,
-                   additional_matcher=functools.partial(match_json, desired_data))
+                     status_code=204,
+                     additional_matcher=functools.partial(match_json, desired_data))
 
             self.sync_step(model_accessor=self.model_accessor).delete_record(fsi)
             self.assertTrue(m.called)
@@ -281,6 +281,7 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
     def tearDown(self):
         self.o = None
         sys.path = self.sys_path_save
+
 
 if __name__ == '__main__':
     unittest.main()

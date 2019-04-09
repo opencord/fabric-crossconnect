@@ -25,6 +25,7 @@ message FabricCrossconnectServiceInstance (ServiceInstance){
 message BNGPortMapping (XOSBase) {
     required string s_tag = 1 [
         help_text = "Single s-tag, range of s-tags, or 'ANY'",
+        max_length = 1024,
         tosca_key = True,
         unique = True];
     required int32 switch_port = 2 [

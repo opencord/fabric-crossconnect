@@ -11,6 +11,8 @@ message FabricCrossconnectServiceInstance (ServiceInstance){
     option verbose_name = "Fabric Crossconnect Service Instance";
     option owner_class_name = "FabricCrossconnectService";
     option description = "Tenancy in the fabric crossconnect service, representing one s-tag routed through the agg switch";
+    option policy_implemented = "True";
+    option sync_implemented = "True";
 
     required int32 s_tag = 1 [
         help_text = "vlan tag of packets to crossconnect"];

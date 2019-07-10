@@ -86,4 +86,7 @@ When a `FabricCrossconnectServiceInstance` is created, updated, or deleted, the 
 ### BNGPortMapping
 
 No specific processing is performed if a `BNGPortMapping` is created, updated, or deleted, as the workflow is driven by `FabricCrossconnectServiceInstance`. Responding to changes in `BNGPortMapping` is future work. For now it is suggested that if you need to change one, afterward you touch any `FabricCrossconnectServiceInstance` that may be affected, causing them to resynchronize.
- 
+
+### Event Steps
+
+When ONOS is restarted, `FabricCrossconnectServiceInstance` objects will be dirtied and resynced.

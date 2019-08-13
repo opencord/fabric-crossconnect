@@ -178,7 +178,7 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
 
             desired_data = {"deviceId": "of:0000000000000201",
                             "vlanId": 111,
-                            "ports": [3, 4]}
+                            "endpoints": [3, 4]}
 
             m.post("http://onos-fabric:8181/onos/segmentrouting/xconnect",
                    status_code=200,

@@ -131,7 +131,7 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
 
         data = {"deviceId": o.switch_datapath_id,
                 "vlanId": o.s_tag,
-                "ports": [int(o.source_port), int(east_port)]}
+                "endpoints": [int(o.source_port), int(east_port)]}
 
         url = onos['url'] + '/onos/segmentrouting/xconnect'
 

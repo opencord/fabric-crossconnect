@@ -63,6 +63,9 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
         from sync_fabric_crossconnect_service_instance import SyncFabricCrossconnectServiceInstance, model_accessor, \
             DeferredException
 
+        from helpers import Helpers
+        self.helpers = Helpers
+
         # import all class names to globals
         for (k, v) in model_accessor.all_model_classes.items():
             globals()[k] = v
@@ -91,10 +94,10 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
         return si
 
     def test_format_url(self):
-        url = self.sync_step(model_accessor=self.model_accessor).format_url("foo.com/bar")
+        url = self.helpers.format_url("foo.com/bar")
         self.assertEqual(url, "http://foo.com/bar")
 
-        url = self.sync_step(model_accessor=self.model_accessor).format_url("http://foo.com/bar")
+        url = self.helpers.format_url("http://foo.com/bar")
         self.assertEqual(url, "http://foo.com/bar")
 
     def test_make_handle_extract_handle(self):
@@ -107,7 +110,7 @@ class TestSyncFabricCrossconnectServiceInstance(unittest.TestCase):
     def test_get_fabric_onos_init(self):
         fsi = FabricCrossconnectServiceInstance(id=7777, owner=self.service)
 
-        d = self.sync_step(model_accessor=self.model_accessor).get_fabric_onos_info(fsi)
+        d = self.helpers.get_fabric_onos_info(self.model_accessor, fsi.owner)
 
         self.assertEqual(d["url"], "http://onos-fabric:8181")
         self.assertEqual(d["user"], "onos")

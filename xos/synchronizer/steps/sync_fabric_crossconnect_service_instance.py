@@ -161,8 +161,8 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
             # backend_handle has everything we need in it to delete this entry.
             (s_tag, switch_datapath_id) = self.extract_handle(o.backend_handle)
 
-            data = {"deviceId": switch_datapath_id,
-                    "vlanId": s_tag}
+            data = {"deviceId": o.switch_datapath_id,
+                    "vlanId": o.s_tag}
 
             url = onos['url'] + '/onos/segmentrouting/xconnect'
 

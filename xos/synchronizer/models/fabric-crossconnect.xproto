@@ -25,6 +25,8 @@ message FabricCrossconnectServiceInstance (ServiceInstance){
 }
 
 message BNGPortMapping (XOSBase) {
+    option sync_implemented = "True";
+
     required string s_tag = 1 [
         help_text = "Single s-tag, range of s-tags, or 'ANY'",
         max_length = 1024,

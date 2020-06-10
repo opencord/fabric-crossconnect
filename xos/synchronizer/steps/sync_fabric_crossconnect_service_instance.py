@@ -22,6 +22,7 @@ from xosconfig import Config
 from multistructlog import create_logger
 import requests
 from requests.auth import HTTPBasicAuth
+from helpers import Helpers
 
 
 class SyncFabricCrossconnectServiceInstance(SyncStep):
@@ -29,35 +30,6 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
     log = create_logger(Config().get('logging'))
 
     observes = FabricCrossconnectServiceInstance
-
-    @staticmethod
-    def format_url(url):
-        if 'http' in url:
-            return url
-        else:
-            return 'http://%s' % url
-
-    @staticmethod
-    def get_fabric_onos_info(si):
-
-        # get the fabric-crossconnect service
-        fabric_crossconnect = si.owner
-
-        # get the onos_fabric service
-        fabric_onos = [s.leaf_model for s in fabric_crossconnect.provider_services if "onos" in s.name.lower()]
-
-        if len(fabric_onos) == 0:
-            raise Exception('Cannot find ONOS service in provider_services of Fabric-Crossconnect')
-
-        fabric_onos = fabric_onos[0]
-
-        return {
-            'url': SyncFabricCrossconnectServiceInstance.format_url(
-                "%s:%s" %
-                (fabric_onos.rest_hostname,
-                 fabric_onos.rest_port)),
-            'user': fabric_onos.rest_username,
-            'pass': fabric_onos.rest_password}
 
     def make_handle(self, s_tag, switch_datapath_id):
         # Generate a backend_handle that uniquely identifies the cross connect. ONOS doesn't provide us a handle, so
@@ -109,7 +81,7 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
         if (o.policed is None) or (o.policed < o.updated):
             raise DeferredException("Waiting for model_policy to run on fcsi %s" % o.id)
 
-        onos = self.get_fabric_onos_info(o)
+        onos = Helpers.get_fabric_onos_info(self.model_accessor, o.owner)
 
         ServiceInstance.objects.get(id=o.id)
 
@@ -156,7 +128,7 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
         self.log.info("Deleting Fabric Crossconnect Service Instance", service_instance=o)
 
         if o.backend_handle:
-            onos = self.get_fabric_onos_info(o)
+            onos = Helpers.get_fabric_onos_info(self.model_accessor, o.owner)
 
             # backend_handle has everything we need in it to delete this entry.
             (s_tag, switch_datapath_id) = self.extract_handle(o.backend_handle)

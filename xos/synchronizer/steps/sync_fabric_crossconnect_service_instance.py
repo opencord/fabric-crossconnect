@@ -23,41 +23,13 @@ from multistructlog import create_logger
 import requests
 from requests.auth import HTTPBasicAuth
 
+from helpers import Helpers
 
 class SyncFabricCrossconnectServiceInstance(SyncStep):
     provides = [FabricCrossconnectServiceInstance]
     log = create_logger(Config().get('logging'))
 
     observes = FabricCrossconnectServiceInstance
-
-    @staticmethod
-    def format_url(url):
-        if 'http' in url:
-            return url
-        else:
-            return 'http://%s' % url
-
-    @staticmethod
-    def get_fabric_onos_info(si):
-
-        # get the fabric-crossconnect service
-        fabric_crossconnect = si.owner
-
-        # get the onos_fabric service
-        fabric_onos = [s.leaf_model for s in fabric_crossconnect.provider_services if "onos" in s.name.lower()]
-
-        if len(fabric_onos) == 0:
-            raise Exception('Cannot find ONOS service in provider_services of Fabric-Crossconnect')
-
-        fabric_onos = fabric_onos[0]
-
-        return {
-            'url': SyncFabricCrossconnectServiceInstance.format_url(
-                "%s:%s" %
-                (fabric_onos.rest_hostname,
-                 fabric_onos.rest_port)),
-            'user': fabric_onos.rest_username,
-            'pass': fabric_onos.rest_password}
 
     def make_handle(self, s_tag, switch_datapath_id):
         # Generate a backend_handle that uniquely identifies the cross connect. ONOS doesn't provide us a handle, so
@@ -70,23 +42,6 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
         s_tag = int(s_tag)
         return (s_tag, switch_datapath_id)
 
-    def range_matches(self, value, pattern):
-        value = int(value)
-        for this_range in pattern.split(","):
-            this_range = this_range.strip()
-            if "-" in this_range:
-                (first, last) = this_range.split("-")
-                first = int(first.strip())
-                last = int(last.strip())
-                if (value >= first) and (value <= last):
-                    return True
-            elif this_range.lower() == "any":
-                return True
-            else:
-                if (value == int(this_range)):
-                    return True
-        return False
-
     def find_bng(self, s_tag):
         # See if there's a mapping for our s-tag directly
         bng_mappings = BNGPortMapping.objects.filter(s_tag=str(s_tag))
@@ -98,7 +53,10 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
 
         # See if there are any ranges or "any" that match
         for bng_mapping in BNGPortMapping.objects.all():
-            if self.range_matches(s_tag, bng_mapping.s_tag):
+            if (Helpers.range_matches(s_tag, bng_mapping.s_tag) == True):
+                return bng_mapping
+            else:
+                #Case of any s-tag
                 return bng_mapping
 
         return None
@@ -109,7 +67,7 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
         if (o.policed is None) or (o.policed < o.updated):
             raise DeferredException("Waiting for model_policy to run on fcsi %s" % o.id)
 
-        onos = self.get_fabric_onos_info(o)
+        onos = Helpers.get_fabric_onos_info(self.model_accessor, o.owner)
 
         ServiceInstance.objects.get(id=o.id)
 
@@ -156,7 +114,7 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
         self.log.info("Deleting Fabric Crossconnect Service Instance", service_instance=o)
 
         if o.backend_handle:
-            onos = self.get_fabric_onos_info(o)
+            onos = Helpers.get_fabric_onos_info(self.model_accessor, o.owner)
 
             # backend_handle has everything we need in it to delete this entry.
             (s_tag, switch_datapath_id) = self.extract_handle(o.backend_handle)

@@ -22,6 +22,9 @@ message FabricCrossconnectServiceInstance (ServiceInstance){
         max_length=256];
     required int32 source_port = 3 [
         help_text = "switch port where access device or VM is connected"];
+    optional int32 bngportmapping_id = 4[
+        help_text = "BNGPortMapping Instance which formed a tuple with this fabric-crossconnect instance",
+        feedback_state = True];
 }
 
 message BNGPortMapping (XOSBase) {

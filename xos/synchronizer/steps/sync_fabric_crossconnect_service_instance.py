@@ -127,6 +127,7 @@ class SyncFabricCrossconnectServiceInstance(SyncStep):
         bng_mapping = self.find_bng(s_tag=o.s_tag)
         if not bng_mapping:
             raise Exception("Unable to determine BNG port for s_tag %s" % o.s_tag)
+        o.bngportmapping_id = bng_mapping.id
         east_port = bng_mapping.switch_port
 
         data = {"deviceId": o.switch_datapath_id,

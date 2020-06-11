@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c9198c6b_b4c7f2ae",
+        "filename": "xos/synchronizer/pull_steps/pull_onos_xconnect.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1000007
+      },
+      "writtenOn": "2020-06-11T14:38:30Z",
+      "side": 1,
+      "message": "Given that the BNGPortMapping is an XOS model I would observe that instead of polling via ONOS.\nYou can also consider to have BNGPortMapping model-policy dirtying the XConnectServiceInstance on update so you completely avoid the polling loop.",
+      "range": {
+        "startLine": 57,
+        "startChar": 8,
+        "endLine": 57,
+        "endChar": 20
+      },
+      "revId": "60a7dce37ff2587f84ae9763eceb09e34ade5986",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": true
+    }
+  ]
+}

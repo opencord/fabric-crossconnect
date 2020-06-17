@@ -32,4 +32,7 @@ message BNGPortMapping (XOSBase) {
         unique = True];
     required int32 switch_port = 2 [
         help_text = "Switch port where BNG or other egress point is connected"];
+    optional string old_s_tag = 3 [
+        help_text = "Field for tracking old s-tag of bngportmapping instance",
+        max_length = 1024];
 }

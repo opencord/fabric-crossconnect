@@ -51,5 +51,12 @@ class BNGPortMapping(BNGPortMapping_decl):
 
     def save(self, *args, **kwargs):
         self.validate_range(self.s_tag)
+        #Retrieving old_s_tag when s_tag is changed for a BNG instance.
+        old_bng = BNGPortMapping.objects.filter(id=self.id)
+        if(len(old_bng) > 0):
+            if (old_bng[0].s_tag != self.s_tag):
+                self.old_s_tag = old_bng[0].s_tag
+        else:
+            pass
 
         super(BNGPortMapping, self).save(*args, **kwargs)

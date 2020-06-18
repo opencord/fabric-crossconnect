@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f37ba30a_f17fac33",
+        "filename": "xos/synchronizer/models/models.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1000016
+      },
+      "writtenOn": "2020-06-18T16:34:32Z",
+      "side": 1,
+      "message": "There\u0027s a way to do this without having to query. There is an internal dictionary, `self._dict`, that holds the set of fields when the object was loaded from the database. There\u0027s also a method, `self.diff` that will let you know the names of the fields that changed. If you can leverage these, it would be more optimal that submitting a database query.",
+      "range": {
+        "startLine": 55,
+        "startChar": 8,
+        "endLine": 55,
+        "endChar": 59
+      },
+      "revId": "fadca2b846b9b1049a6e99749c53a5b9de65fc1a",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}

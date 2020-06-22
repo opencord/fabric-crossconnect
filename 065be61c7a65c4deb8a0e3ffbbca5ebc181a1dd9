@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d98cb932_f1fb1025",
+        "filename": "xos/synchronizer/steps/sync_bng_port_mapping.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1000007
+      },
+      "writtenOn": "2020-06-22T21:44:31Z",
+      "side": 1,
+      "message": "this is already implemented in https://github.com/opencord/fabric-crossconnect/blob/c0572048dc0e05f579b6b39db8f7e28765de24f3/xos/synchronizer/steps/sync_fabric_crossconnect_service_instance.py#L34\n\nIt could be moved in an helpers.py file such as https://github.com/opencord/fabric/blob/3d2d3417c063bb88027bf40db10d3154f57f7cd5/xos/synchronizer/steps/helpers.py",
+      "range": {
+        "startLine": 36,
+        "startChar": 8,
+        "endLine": 36,
+        "endChar": 18
+      },
+      "revId": "065be61c7a65c4deb8a0e3ffbbca5ebc181a1dd9",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a518016f_c53330a7",
+        "filename": "xos/synchronizer/steps/sync_bng_port_mapping.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1000007
+      },
+      "writtenOn": "2020-06-22T21:44:31Z",
+      "side": 1,
+      "message": "same as per \"format_url\"",
+      "range": {
+        "startLine": 42,
+        "startChar": 8,
+        "endLine": 42,
+        "endChar": 28
+      },
+      "revId": "065be61c7a65c4deb8a0e3ffbbca5ebc181a1dd9",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": true
+    }
+  ]
+}

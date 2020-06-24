@@ -18,6 +18,7 @@ This service is composed of three models:
 - `BNGPortMapping` represents the other half of a vlan crossconnect. Fields include the following:
     - `s_tag` the vlan_id that will be connected. In addition to specifying a single vlan_id, the keyword `ANY` may be used, or a range (`123-456`) may be used.
     - `switch_port` port number on the switch
+    - `old_s_tag` Field for tracking old s-tag of bngportmapping instance
 
 `FabricCrossconnectServiceInstance` and `BNGPortMapping` work together to create the vlan crossconnect tuple, linked by a common `s-tag`.
 
@@ -85,7 +86,7 @@ When a `FabricCrossconnectServiceInstance` is created, updated, or deleted, the 
 
 ### BNGPortMapping
 
-No specific processing is performed if a `BNGPortMapping` is created, updated, or deleted, as the workflow is driven by `FabricCrossconnectServiceInstance`. Responding to changes in `BNGPortMapping` is future work. For now it is suggested that if you need to change one, afterward you touch any `FabricCrossconnectServiceInstance` that may be affected, causing them to resynchronize.
+When a `BNGPortMapping` is created, updated, or deleted, the synchronizer will make a REST API call to ONOS. Appropriate xconnects are removed from ONOS and parallely new bng data and rules are pushed to ONOS.
 
 ### Event Steps
 
